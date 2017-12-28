@@ -1,0 +1,6 @@
+---
+- hosts: all
+  become: yes
+  roles:
+    - yum_update
+    - virtualization

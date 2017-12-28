@@ -1,0 +1,47 @@
+---
+- name: Install virtualization host
+  yum:
+    name: '@^Virtualization Host'
+    state: installed
+
+- name: Enables libvirtd TCP listening
+  lineinfile:
+    path: /etc/sysconfig/libvirtd
+    regexp: '#(LIBVIRTD_ARGS="--listen")'
+    line: '\1'
+    backrefs: yes
+
+- name: Configure libvirtd TCP listening
+  lineinfile:
+    path: /etc/libvirt/libvirtd.conf
+    regexp: '{{ item.regexp }}'
+    line: '{{ item.line }}'
+    backrefs: yes
+  with_items:
+    - regexp: '#(listen_tls = 0)'
+      line: '\1'
+    - regexp: '#(listen_tcp = 1)'
+      line: '\1'
+    - regexp: '#(tcp_port = "16509")'
+      line: '\1'
+    - regexp: '#(auth_tcp = ")sasl(")'
+      line: '\1none\2'
+
+- name: Start and enable libvirtd.service
+  systemd:
+    name: libvirtd.service
+    state: started
+    enabled: yes
+
+- name: Start and enable firewalld
+  systemd:
+    name: firewalld.service
+    state: started
+    enabled: yes
+
+- name: Allow qemu+tcp libvirtd listening port
+  firewalld:
+    port: 16509/tcp
+    state: enabled
+    permanent: yes
+    immediate: yes
